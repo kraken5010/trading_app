@@ -1,26 +1,26 @@
+from datetime import datetime
 from typing import AsyncGenerator
 
 from fastapi import Depends
 from fastapi_users.db import SQLAlchemyUserDatabase
 from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTable
-from sqlalchemy import Integer, String, Boolean
+from sqlalchemy import Integer, String, Boolean, TIMESTAMP, ForeignKey, Column
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, declarative_base, Mapped, mapped_column
 
-from src.config import DB_USER, DB_PASS, DB_HOST, DB_PORT, DB_NAME
+from auth.models import role
+from config import DB_USER, DB_PASS, DB_HOST, DB_PORT, DB_NAME
 
 DATABASE_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-# Base: DeclarativeBase = declarative_base()
-
-
-class Base(DeclarativeBase):
-    pass
+Base: DeclarativeBase = declarative_base()
 
 
 class User(SQLAlchemyBaseUserTable[int], Base):
-    email: Mapped[str] = mapped_column(
-        String(length=320), unique=True, index=True, nullable=False
-    )
+    id = Column(Integer, primary_key=True)
+    email = Column(String, nullable=False)
+    username = Column(String, nullable=False)
+    registered_at = Column(TIMESTAMP, default=datetime.utcnow)
+    role_id = Column(Integer, ForeignKey(role.c.id))
     hashed_password: Mapped[str] = mapped_column(
         String(length=1024), nullable=False
     )
@@ -33,13 +33,9 @@ class User(SQLAlchemyBaseUserTable[int], Base):
     )
 
 
+# point of entry sqlalchemy
 engine = create_async_engine(DATABASE_URL)
 async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
-
-
-async def create_db_and_tables():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
 
 
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:

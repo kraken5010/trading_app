@@ -1,75 +1,40 @@
-from datetime import datetime
-from enum import Enum
-from typing import List, Optional
+from fastapi import FastAPI, Depends
+from fastapi_users import fastapi_users, FastAPIUsers
 
-from fastapi import FastAPI, status, Request
-from fastapi.encoders import jsonable_encoder
-from fastapi.exceptions import ValidationError
-from pydantic import BaseModel, Field
-from fastapi.responses import JSONResponse
+from auth.base_config import auth_backend
+from auth.database import User
+from auth.manager import get_user_manager
+from auth.schemas import UserRead, UserCreate
 
 app = FastAPI(
     title="Trading App"
 )
 
+fastapi_users = FastAPIUsers[User, int](
+    get_user_manager,
+    [auth_backend],
+)
 
-# info about error instead "Internal Server Error"
-@app.exception_handler(ValidationError)
-async def validation_exception_handler(request: Request, exc: ValidationError):
-    return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content=jsonable_encoder({"detail": exc.errors()}),
-    )
+app.include_router(
+    fastapi_users.get_auth_router(auth_backend),
+    prefix="/auth/jwt",
+    tags=["auth"],
+)
 
+app.include_router(
+    fastapi_users.get_register_router(UserRead, UserCreate),
+    prefix="/auth",
+    tags=["auth"],
+)
 
-fake_user = [
-    {"id": 1, "role": "admin", "name": "Bob"},
-    {"id": 2, "role": "investor", "name": "John"},
-    {"id": 3, "role": "trader", "name": "Matt"},
-    {"id": 4, "role": "trader", "name": "Matt", "degree": [
-        {"id": 1, "create_at": "2020-01-05T00:00:00", "type_degree": "expert"}
-    ]},
-]
-
-fake_trades = [
-    {"id": 1, "user_id": 1, "currency": "BTC", "side": "buy", "price": 123, "amount": 2.12},
-    {"id": 2, "user_id": 2, "currency": "BTC", "side": "sell", "price": 456, "amount": 2.12}
-]
+current_user = fastapi_users.current_user()
 
 
-class DegreeType(Enum):
-    newbie = "newbie"
-    expert = "expert"
+@app.get("/protected-route")
+def protected_route(user: User = Depends(current_user)):
+    return f"Hello, {user.username}"
 
 
-class Degree(BaseModel):
-    id: int
-    create_at: datetime
-    type_degree: DegreeType
-
-
-class User(BaseModel):
-    id: int
-    role: str
-    name: str
-    degree: Optional[List[Degree]] = []
-
-
-@app.get("/user/{user_id}", response_model=List[User])
-async def get_user(user_id: int):
-    return [user for user in fake_user if user.get("id") == user_id]
-
-
-class Trade(BaseModel):
-    id: int
-    user_id: int
-    currency: str = Field(max_length=5)
-    side: str
-    price: float = Field(ge=0)
-    amount: float
-
-
-@app.post("/trade")
-async def add_trades(trade: List[Trade]):
-    fake_trades.extend(trade)
-    return {"status": 200, "data": fake_trades}
+@app.get("/unprotected-route")
+def unprotected_route():
+    return f"Hello, anonym"
