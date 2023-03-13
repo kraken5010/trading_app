@@ -7,7 +7,7 @@ from sqlalchemy.orm import DeclarativeBase, declarative_base
 from config import DB_USER, DB_PASS, DB_HOST, DB_PORT, DB_NAME
 
 DATABASE_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-Base: DeclarativeBase = declarative_base()
+Base = declarative_base()
 
 metadata = MetaData()
 

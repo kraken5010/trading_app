@@ -14,29 +14,22 @@ router = APIRouter(
 
 @router.get("/")
 async def get_specific_operations(operation_type: str, session: AsyncSession = Depends(get_async_session)):
-    query = select(operation).where(operation.c.type == operation_type)
-    result = await session.execute(query)
-    return result.all()
-
-
-# @router.get("/")
-# async def get_specific_operations(operation_type: str, session: AsyncSession = Depends(get_async_session)):
-#     try:
-#         query = select(operation).where(operation.c.type == operation_type)
-#         result = await session.execute(query)
-#         # if the request done, getting the successful response
-#         return {
-#             'status': 'success',
-#             'data': result.all(),
-#             'details': 'None'
-#         }
-#     except Exception:
-#         # if the request fail, getting the  exception response
-#         raise HTTPException(status_code=500, detail={
-#             'status': 'error',
-#             'data': None,
-#             'details': None
-#         })
+    try:
+        query = select(operation).where(operation.c.type == operation_type)
+        result = await session.execute(query)
+        # if the request done, getting the successful response
+        return {
+            'status': 'success',
+            'data': result.mappings().all(),
+            'details': 'None'
+        }
+    except Exception:
+        # if the request fail, getting the  exception response
+        raise HTTPException(status_code=500, detail={
+            'status': 'error',
+            'data': None,
+            'details': None
+        })
 
 
 @router.post("/")
