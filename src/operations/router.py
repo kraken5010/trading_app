@@ -5,7 +5,6 @@ from fastapi_cache.decorator import cache
 from sqlalchemy import insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from auth.base_config import current_user
 from database import get_async_session
 from operations.models import operation
 from operations.schemas import OperationCreate
@@ -25,14 +24,17 @@ def get_long_op():
 
 
 @router.get("/")
-async def get_specific_operations(operation_type: str, session: AsyncSession = Depends(get_async_session)):
+async def get_specific_operations(
+        operation_type: str,
+        session: AsyncSession = Depends(get_async_session)
+):
     try:
         query = select(operation).where(operation.c.type == operation_type)
         result = await session.execute(query)
         # if the request done, getting the successful response
         return {
             'status': 'success',
-            'data': result.mappings().all(),
+            'data': result.all(),
             'details': 'None'
         }
     except Exception:
@@ -45,7 +47,10 @@ async def get_specific_operations(operation_type: str, session: AsyncSession = D
 
 
 @router.post("")
-async def add_specific_operations(new_operation: OperationCreate, session: AsyncSession = Depends(get_async_session)):
+async def add_specific_operations(
+        new_operation: OperationCreate,
+        session: AsyncSession = Depends(get_async_session)
+):
     stmt = insert(operation).values(**new_operation.dict())
     await session.execute(stmt)
     await session.commit()
