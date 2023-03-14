@@ -17,12 +17,14 @@ async def test_add_role():
 
 
 def test_register():
-    client.post("/auth/register", json={
-          "email": "user@example.com",
-          "password": "string",
-          "is_active": True,
-          "is_superuser": False,
-          "is_verified": False,
-          "username": "string",
-          "role_id": 0
-})
+    response = client.post("/auth/register", json={
+        "email": "string",
+        "password": "string",
+        "is_active": True,
+        "is_superuser": False,
+        "is_verified": False,
+        "username": "string",
+        "role_id": 1
+    })
+
+    assert response.status_code == 201
