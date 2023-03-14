@@ -5,8 +5,6 @@ from sqlalchemy import MetaData, Table, Column, Integer, String, TIMESTAMP, Fore
 
 from database import Base, metadata
 
-metadata = MetaData()
-
 role = Table(
     "role",
     metadata,
