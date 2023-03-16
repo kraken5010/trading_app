@@ -1,3 +1,9 @@
+docker start:
+	docker compose -f docker-compose.yml up -d
+
+docker stop:
+	docker compose -f docker-compose.yml down && docker network prune --force
+
 up:
 	uvicorn main:app --reload
 
